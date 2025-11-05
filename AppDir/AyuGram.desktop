@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Encoding=UTF-8
+Name=AyuGram
+Exec=AyuGram
+Terminal=false
+Icon=icon256
+StartupWMClass=AyuGram
+Type=Application
+Categories=Application

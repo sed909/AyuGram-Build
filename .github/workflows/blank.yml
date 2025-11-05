@@ -1,0 +1,121 @@
+name: AppImage
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  schedule:
+    - cron: "0 10 * * 0"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: 
+     image: ghcr.io/pkgforge-dev/archlinux:latest
+     volumes:
+       - ${{ github.workspace }}/tdesktop:/usr/src/tdesktop
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Get dependencies
+      if: always()
+      run: |
+       chmod +x ./get-dependencies.sh && ./get-dependencies.sh
+
+    - name: Get AyuGram
+      run: |
+       git clone --recursive https://github.com/AyuGram/AyuGramDesktop.git tdesktop
+
+    - name: Get docker
+      run: |
+       wget https://download.docker.com/linux/static/stable/x86_64/docker-28.5.1.tgz -qO- | tar xvfz - docker/docker --strip-components=1
+       cp -rp ./docker /usr/bin/ && rm -r ./docker
+
+    - name: Prepare AyuGram
+      run: |
+       cd tdesktop/Telegram/build/docker/centos_env
+       poetry install
+       poetry run gen_dockerfile
+
+    - name: Build AyuGram
+      run: |
+       docker run \
+        -u $(id -u) \
+        -v ${{ github.workspace }}/tdesktop:/usr/src/tdesktop \
+        ghcr.io/telegramdesktop/tdesktop/centos_env@sha256:86e5f93f6f9957c8b333f358a67444b313f1234fe7a04037ae370e8c4c26c529 \
+        /usr/src/tdesktop/Telegram/build/docker/centos_env/build.sh \
+        -D TDESKTOP_API_ID=2040 \
+        -D TDESKTOP_API_HASH=b18441a1ff607e10a989891a5462e627
+
+    - name: Copy binary file
+      run: |
+       mkdir -p AppDir/bin
+       cp tdesktop/out/Release/AyuGram AppDir/bin/AyuGram
+       echo $(grep "^AppVersionStr " "tdesktop/Telegram/build/version" | awk '{print $2}') >> "version"
+        
+    - name: Make AppImage/AppBundle
+      run: |
+       chmod +x ./*-appimage.sh && ./*-appimage.sh
+       mkdir dist
+       mv *.AppImage* dist/
+       mv *.AppBundle* dist/
+
+    - name: Check version file
+      run: |
+       grep "^AppVersionStr " "tdesktop/Telegram/build/version" | awk '{print $2}'
+       echo "APP_VERSION=$(grep "^AppVersionStr " "tdesktop/Telegram/build/version" | awk '{print $2}')" >> "${GITHUB_ENV}"
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4.6.2
+      with:
+        name: AyuGram
+        path: 'dist'
+        
+    - name: Upload version file
+      uses: actions/upload-artifact@v4.6.2
+      with:
+       name: version
+       path: ${{ github.workspace }}/version
+    
+  release:
+      if: ${{ github.ref_name == 'main' }}
+      needs: [build]
+      permissions: write-all
+      runs-on: ubuntu-latest
+
+      steps:
+        - uses: actions/download-artifact@v4.3.0
+          with:
+            name: AyuGram
+        - uses: actions/download-artifact@v4.3.0
+          with:
+            name: version
+
+        - name: Read version and Get date
+          run: |
+            echo "VERSION=$(cat version)" >> "${GITHUB_ENV}"
+            echo "DATE=$(date +'%Y-%m-%d_%s')" >> "${GITHUB_ENV}"
+
+        - name: Release Artifacts
+          uses: softprops/action-gh-release@v2.2.2
+          with:
+            name: "AyuGram: ${{ env.VERSION }}"
+            tag_name: "${{ env.VERSION }}@${{ env.DATE }}"
+            prerelease: false
+            draft: false
+            generate_release_notes: false
+            make_latest: true
+            files: |
+              *.AppImage*
+              *.AppBundle*
+  
+        - uses: actions/checkout@v4
+        - name: Update LATEST_VERSION
+          run: |
+            echo "${{ env.VERSION }}" > ./LATEST_VERSION
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add ./LATEST_VERSION
+            git commit --allow-empty -m 'bump `LATEST_VERSION` [skip ci]'
+            git push
