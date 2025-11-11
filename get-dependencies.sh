@@ -29,6 +29,10 @@ pacman -Syu --noconfirm \
 	pipewire-audio      \
 	pulseaudio-alsa     \
 	qt6-wayland         \
+	qt6-svg             \
+	libxcursor          \
+	libxfixes           \
+	libxrender          \
 	vulkan-mesa-layers  \
 	wget                \
 	xorg-server-xvfb    \
