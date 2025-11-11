@@ -15,6 +15,11 @@ pacman -Syu --noconfirm \
 	expat               \
 	libpng              \
 	libxcb              \
+	xcb-util-cursor     \
+	xcb-util-image      \
+	xcb-util-keysyms    \
+	xcb-util-renderutil \
+	xcb-util-wm         \
 	libffi              \
 	pcre2               \
 	util-linux          \
