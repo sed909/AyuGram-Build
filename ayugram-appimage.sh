@@ -37,6 +37,5 @@ echo "Generating [dwfs]AppBundle...(Go runtime)"
 	--appbundle-id="AyuGram-$VERSION" \
 	--compression "-C zstd:level=22 -S26 -B8" \
 	--output-to "AyuGram-$VERSION-anylinux-$ARCH.dwfs.AppBundle" \
-	--disable-use-random-workdir
 
 zsyncmake *.AppBundle -u *.AppBundle
