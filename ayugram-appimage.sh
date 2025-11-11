@@ -17,6 +17,7 @@ export DEPLOY_QT=1
 
 
 strip -s -R .comment --strip-unneeded ./AppDir/bin/AyuGram
+chmod +x ./AppDir/AppRun
 
 wget --retry-connrefused --tries=30 "$SHARUN" -O ./quick-sharun
 chmod +x ./quick-sharun

@@ -1,0 +1,13 @@
+#!/bin/bash
+
+export APPDIR="${APPDIR:-$(dirname "$(readlink -f "$0")")}"
+export PATH="${APPDIR}/bin:${PATH}"
+export LD_LIBRARY_PATH="${APPDIR}/lib:${LD_LIBRARY_PATH}"
+
+export TMPDIR="${TMPDIR:-/tmp}"
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp/runtime-$(id -u)}"
+mkdir -p "$XDG_RUNTIME_DIR"
+
+export APPIMAGE_EXTRACT_AND_RUN=0
+
+exec "${APPDIR}/bin/AyuGram" "$@"
