@@ -9,24 +9,6 @@ export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp/runtime-$(id -u)}"
 mkdir -p "$XDG_RUNTIME_DIR"
 
 export APPIMAGE_EXTRACT_AND_RUN=0
+export APPIMAGE_LAZY_UNMOUNT=1
 
-cleanup() {
-    pkill -P $$ 2>/dev/null || true
-    
-    sleep 0.5
-    
-    pkill -9 -P $$ 2>/dev/null || true
-}
-
-trap cleanup EXIT INT TERM
-
-"${APPDIR}/bin/AyuGram" "$@" &
-APP_PID=$!
-
-wait $APP_PID
-EXIT_CODE=$?
-
-cleanup
-
-exit $EXIT_CODE
-
+exec "${APPDIR}/bin/AyuGram" "$@"
